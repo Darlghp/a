@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Feed from './components/Feed';
 import CreatePost from './components/CreatePost';
+import ManageCommunityModal from './components/ManageCommunityModal';
 
 const App: React.FC = () => {
   const [currentUser] = useState<User>({
@@ -31,6 +32,8 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewMode>('home');
   const [activeCommunityId, setActiveCommunityId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [communityToManage, setCommunityToManage] = useState<Community | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -81,6 +84,22 @@ const App: React.FC = () => {
     setCommunities(prev => [...prev, newComm]);
   };
 
+  const handleUpdateCommunity = (updatedComm: Community) => {
+    setCommunities(prev => prev.map(c => c.id === updatedComm.id ? updatedComm : c));
+    setIsManageModalOpen(false);
+  };
+
+  const handleDeleteCommunity = (id: string) => {
+    if (confirm('Deseja realmente excluir esta comunidade? Todos os posts nela serão mantidos no feed geral.')) {
+      setCommunities(prev => prev.filter(c => c.id !== id));
+      if (activeCommunityId === id) {
+        setActiveCommunityId(null);
+        setCurrentView('home');
+      }
+      setIsManageModalOpen(false);
+    }
+  };
+
   const filteredPosts = posts.filter(post => {
     const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           post.content.toLowerCase().includes(searchQuery.toLowerCase());
@@ -112,23 +131,33 @@ const App: React.FC = () => {
 
         {/* Conteúdo Central */}
         <main className="flex-1 max-w-[640px] min-w-0">
-          {/* Header de Comunidade se ativo */}
           {activeCommunity && currentView === 'community' && (
             <div className="bg-white rounded-md shadow-sm mb-4 overflow-hidden border border-[#ccc]">
               <div className="h-20 w-full bg-cover bg-center" style={{ backgroundImage: `url(${activeCommunity.banner})` }}></div>
-              <div className="px-4 py-3 flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-white border-4 border-white -mt-10 flex items-center justify-center text-3xl shadow-sm">
-                  {activeCommunity.icon}
+              <div className="px-4 py-3 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-white border-4 border-white -mt-10 flex items-center justify-center text-3xl shadow-sm">
+                    {activeCommunity.icon}
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold">r/{activeCommunity.name}</h1>
+                    <p className="text-gray-500 text-xs">c/{activeCommunity.slug}</p>
+                  </div>
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold">r/{activeCommunity.name}</h1>
-                  <p className="text-gray-500 text-xs">c/{activeCommunity.slug}</p>
-                </div>
+                <button 
+                  onClick={() => { setCommunityToManage(activeCommunity); setIsManageModalOpen(true); }}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-xs font-bold transition-colors flex items-center gap-1 border border-gray-300"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Modificar
+                </button>
               </div>
             </div>
           )}
 
-          {/* Barra de Criação Estilo Reddit */}
           <div className="bg-white p-2 rounded border border-[#ccc] mb-4 flex items-center gap-2">
             <img src={currentUser.avatar} className="w-9 h-9 rounded-full bg-gray-200" alt="me" />
             <input 
@@ -147,13 +176,13 @@ const App: React.FC = () => {
           <Feed 
             posts={filteredPosts} 
             onVote={handleVote} 
-            onDelete={(id) => setPosts(posts.filter(p => p.id !== id))}
+            onDelete={(id) => { if(confirm('Excluir?')) setPosts(posts.filter(p => p.id !== id)); }}
             onAddComment={handleAddComment}
             communities={communities}
           />
         </main>
 
-        {/* Sidebar Direita (Widgets) */}
+        {/* Sidebar Direita */}
         <div className="hidden lg:block w-[312px] shrink-0">
           <div className="bg-white rounded border border-[#ccc] overflow-hidden sticky top-16">
             <div className="h-8 bg-[#0079D3]"></div>
@@ -162,12 +191,15 @@ const App: React.FC = () => {
                 <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold">P</div>
                 <span className="font-bold">Privy Home</span>
               </div>
-              <p className="text-sm mb-4 leading-snug">Sua página inicial personalizada do Privy. Controle tudo, veja tudo.</p>
+              <p className="text-sm mb-4 leading-snug">O seu Reddit privado. Aqui você é o dono, o moderador e o usuário.</p>
               <div className="space-y-2 border-t pt-4">
                 <button onClick={() => setIsCreateModalOpen(true)} className="w-full bg-[#0079D3] text-white font-bold py-1.5 rounded-full hover:bg-[#005FA3] transition-colors text-sm">
                   Criar Postagem
                 </button>
-                <button className="w-full border border-[#0079D3] text-[#0079D3] font-bold py-1.5 rounded-full hover:bg-blue-50 transition-colors text-sm">
+                <button 
+                  onClick={() => { setCommunityToManage(null); setIsManageModalOpen(true); }}
+                  className="w-full border border-[#0079D3] text-[#0079D3] font-bold py-1.5 rounded-full hover:bg-blue-50 transition-colors text-sm"
+                >
                   Criar Comunidade
                 </button>
               </div>
@@ -182,6 +214,16 @@ const App: React.FC = () => {
           onSubmit={handleCreatePost}
           communities={communities}
           activeCommunityId={activeCommunityId || undefined}
+        />
+      )}
+
+      {isManageModalOpen && (
+        <ManageCommunityModal 
+          onClose={() => setIsManageModalOpen(false)}
+          onSubmit={handleUpdateCommunity}
+          onDelete={handleDeleteCommunity}
+          onCreate={handleCreateCommunity}
+          community={communityToManage}
         />
       )}
     </div>
