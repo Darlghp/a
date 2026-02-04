@@ -35,6 +35,7 @@ export interface Post {
   votes: number;
   comments: Comment[];
   type: 'text' | 'image';
+  isPinned?: boolean;
 }
 
 export type ViewMode = 'home' | 'community' | 'post';

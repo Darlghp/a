@@ -6,11 +6,12 @@ interface PostCardProps {
   post: Post;
   communityName: string;
   onVote: (id: string, delta: number) => void;
+  onTogglePin: (id: string) => void;
   onDelete: (id: string) => void;
   onAddComment: (postId: string, content: string) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, communityName, onVote, onDelete, onAddComment }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, communityName, onVote, onTogglePin, onDelete, onAddComment }) => {
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [userVote, setUserVote] = useState<number>(0);
@@ -30,9 +31,9 @@ const PostCard: React.FC<PostCardProps> = ({ post, communityName, onVote, onDele
   };
 
   return (
-    <div className="bg-white rounded border border-[#ccc] hover:border-[#898989] transition-colors flex overflow-hidden mb-3 shadow-sm">
+    <div className={`bg-white rounded border ${post.isPinned ? 'border-[#0079D3]' : 'border-[#ccc]'} hover:border-[#898989] transition-colors flex overflow-hidden mb-3 shadow-sm relative`}>
       {/* Barra lateral de votos */}
-      <div className="w-10 bg-[#F8F9FA] flex flex-col items-center py-2 gap-1 shrink-0">
+      <div className={`w-10 ${post.isPinned ? 'bg-blue-50' : 'bg-[#F8F9FA]'} flex flex-col items-center py-2 gap-1 shrink-0`}>
         <button 
           onClick={() => handleVoteAction(1)}
           className={`p-1 rounded hover:bg-gray-200 transition-colors ${userVote === 1 ? 'text-[#FF4500]' : 'text-gray-500'}`}
@@ -57,6 +58,14 @@ const PostCard: React.FC<PostCardProps> = ({ post, communityName, onVote, onDele
       {/* Conteúdo */}
       <div className="flex-1 min-w-0">
         <div className="p-3">
+          {post.isPinned && (
+            <div className="flex items-center gap-1 text-[10px] font-bold text-[#0079D3] mb-1">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M12.293 1.293a1 1 0 011.414 0l4.243 4.243a1 1 0 010 1.414l-2.404 2.404c.162.593.18 1.144.07 1.63L18.464 13.5a1 1 0 01-1.414 1.414l-2.535-2.85c-.486.11-1.037.092-1.63-.07L10.48 14.4l-.8 3a1 1 0 01-1.897.26l-1.5-4.5-4.5-1.5a1 1 0 01.26-1.897l3-.8 2.404-2.404c-.162-.593-.18-1.144-.07-1.63L4.536 2.5a1 1 0 011.414-1.414l2.535 2.85c.486-.11 1.037-.092 1.63.07l2.404-2.404z" />
+              </svg>
+              FIXADO PELO ADMINISTRADOR
+            </div>
+          )}
           <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-500 mb-2">
             <span className="font-bold text-black hover:underline cursor-pointer">r/{communityName}</span>
             <span>•</span>
@@ -95,14 +104,20 @@ const PostCard: React.FC<PostCardProps> = ({ post, communityName, onVote, onDele
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
-              {post.comments.length}
+              {post.comments.length} Comentários
             </button>
-            <button className="flex items-center gap-2 text-gray-500 hover:bg-gray-100 p-2 rounded text-xs font-bold transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            
+            <button 
+              onClick={() => onTogglePin(post.id)}
+              className={`flex items-center gap-2 ${post.isPinned ? 'text-[#0079D3] bg-blue-50' : 'text-gray-500 hover:bg-gray-100'} p-2 rounded text-xs font-bold transition-colors`}
+              title={post.isPinned ? "Desafixar do topo" : "Fixar no topo"}
+            >
+              <svg className="w-5 h-5" fill={post.isPinned ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12.293 1.293a1 1 0 011.414 0l4.243 4.243a1 1 0 010 1.414l-2.404 2.404c.162.593.18 1.144.07 1.63L18.464 13.5a1 1 0 01-1.414 1.414l-2.535-2.85c-.486.11-1.037.092-1.63-.07L10.48 14.4l-.8 3a1 1 0 01-1.897.26l-1.5-4.5-4.5-1.5a1 1 0 01.26-1.897l3-.8 2.404-2.404c-.162-.593-.18-1.144-.07-1.63L4.536 2.5a1 1 0 011.414-1.414l2.535 2.85c.486-.11 1.037-.092 1.63.07l2.404-2.404z" />
               </svg>
-              Share
+              {post.isPinned ? "Fixado" : "Fixar"}
             </button>
+
             <button 
               onClick={() => { if(confirm('Excluir esta postagem?')) onDelete(post.id); }}
               className="flex items-center gap-2 text-gray-400 hover:bg-red-50 hover:text-red-500 p-2 rounded text-xs font-bold ml-auto transition-colors"

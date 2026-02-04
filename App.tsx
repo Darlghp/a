@@ -50,7 +50,8 @@ const App: React.FC = () => {
       id: `post_${Date.now()}`,
       timestamp: Date.now(),
       votes: 1,
-      comments: []
+      comments: [],
+      isPinned: false
     };
     setPosts(prev => [post, ...prev]);
     setIsCreateModalOpen(false);
@@ -58,6 +59,10 @@ const App: React.FC = () => {
 
   const handleVote = (postId: string, delta: number) => {
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, votes: p.votes + delta } : p));
+  };
+
+  const handleTogglePin = (postId: string) => {
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, isPinned: !p.isPinned } : p));
   };
 
   const handleAddComment = (postId: string, content: string) => {
@@ -178,6 +183,7 @@ const App: React.FC = () => {
           <Feed 
             posts={filteredPosts} 
             onVote={handleVote} 
+            onTogglePin={handleTogglePin}
             onDelete={(id) => { if(confirm('Excluir?')) setPosts(posts.filter(p => p.id !== id)); }}
             onAddComment={handleAddComment}
             communities={communities}

@@ -7,11 +7,12 @@ interface FeedProps {
   posts: Post[];
   communities: Community[];
   onVote: (id: string, delta: number) => void;
+  onTogglePin: (id: string) => void;
   onDelete: (id: string) => void;
   onAddComment: (postId: string, content: string) => void;
 }
 
-const Feed: React.FC<FeedProps> = ({ posts, communities, onVote, onDelete, onAddComment }) => {
+const Feed: React.FC<FeedProps> = ({ posts, communities, onVote, onTogglePin, onDelete, onAddComment }) => {
   if (posts.length === 0) {
     return (
       <div className="bg-white p-12 rounded-lg border border-gray-300 text-center shadow-sm">
@@ -24,9 +25,16 @@ const Feed: React.FC<FeedProps> = ({ posts, communities, onVote, onDelete, onAdd
     );
   }
 
+  // Lógica de ordenação: Primeiro os fixados (ordenados por tempo), depois os não fixados (ordenados por tempo)
+  const sortedPosts = [...posts].sort((a, b) => {
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+    return b.timestamp - a.timestamp;
+  });
+
   return (
     <div className="space-y-4 pb-12">
-      {posts.map((post) => {
+      {sortedPosts.map((post) => {
         const comm = communities.find(c => c.id === post.communityId);
         return (
           <PostCard 
@@ -34,6 +42,7 @@ const Feed: React.FC<FeedProps> = ({ posts, communities, onVote, onDelete, onAdd
             post={post} 
             communityName={comm?.name || 'Geral'} 
             onVote={onVote} 
+            onTogglePin={onTogglePin}
             onDelete={onDelete}
             onAddComment={onAddComment}
           />
