@@ -1,0 +1,7 @@
+{
+  "name": "Privy - Seu Reddit Privado",
+  "description": "Uma plataforma de rede social privada estilo Reddit onde você tem controle total sobre comunidades, postagens e mídias.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
