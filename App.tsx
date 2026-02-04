@@ -71,14 +71,14 @@ const App: React.FC = () => {
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p));
   };
 
-  const handleCreateCommunity = (name: string, description: string) => {
+  const handleCreateCommunity = (name: string, description: string, icon: string, banner: string) => {
     const newComm: Community = {
       id: `comm_${Date.now()}`,
       name,
       slug: name.toLowerCase().replace(/\s+/g, '-'),
       description,
-      icon: '📁',
-      banner: `https://picsum.photos/seed/${name}/800/200`,
+      icon: icon || '📁',
+      banner: banner || `https://picsum.photos/seed/${name}/800/200`,
       memberCount: 1
     };
     setCommunities(prev => [...prev, newComm]);

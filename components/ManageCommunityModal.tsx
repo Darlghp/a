@@ -6,7 +6,7 @@ interface ManageCommunityModalProps {
   onClose: () => void;
   onSubmit: (comm: Community) => void;
   onDelete: (id: string) => void;
-  onCreate: (name: string, desc: string) => void;
+  onCreate: (name: string, desc: string, icon: string, banner: string) => void;
   community: Community | null;
 }
 
@@ -52,7 +52,7 @@ const ManageCommunityModal: React.FC<ManageCommunityModalProps> = ({ onClose, on
         banner
       });
     } else {
-      onCreate(name, description);
+      onCreate(name, description, icon, banner);
       onClose();
     }
   };
