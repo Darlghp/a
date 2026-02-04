@@ -27,6 +27,17 @@ const ManageCommunityModal: React.FC<ManageCommunityModalProps> = ({ onClose, on
     }
   }, [community]);
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string) => void) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setter(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
@@ -45,6 +56,8 @@ const ManageCommunityModal: React.FC<ManageCommunityModalProps> = ({ onClose, on
       onClose();
     }
   };
+
+  const isImageIcon = icon.startsWith('data:') || icon.startsWith('http');
 
   return (
     <div className="fixed inset-0 z-[110] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
@@ -73,7 +86,6 @@ const ManageCommunityModal: React.FC<ManageCommunityModalProps> = ({ onClose, on
                 onChange={e => setName(e.target.value)}
               />
             </div>
-            <p className="mt-1 text-[10px] text-gray-400">Nomes de comunidades não podem ser alterados depois de criados no Reddit real, mas aqui você manda!</p>
           </div>
 
           <div>
@@ -88,12 +100,28 @@ const ManageCommunityModal: React.FC<ManageCommunityModalProps> = ({ onClose, on
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold mb-2 text-gray-700">ÍCONE (EMOJI)</label>
-              <input 
-                className="w-full border border-gray-300 rounded p-2 text-center text-xl outline-none focus:border-[#0079D3]"
-                value={icon}
-                onChange={e => setIcon(e.target.value)}
-              />
+              <label className="block text-xs font-bold mb-2 text-gray-700">ÍCONE (FOTO OU EMOJI)</label>
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-gray-100 border flex items-center justify-center overflow-hidden shrink-0">
+                  {isImageIcon ? (
+                    <img src={icon} className="w-full h-full object-cover" alt="Icon preview" />
+                  ) : (
+                    <span className="text-2xl">{icon}</span>
+                  )}
+                </div>
+                <div className="flex flex-col gap-1 w-full">
+                  <input 
+                    className="w-full border border-gray-300 rounded p-1 text-xs outline-none focus:border-[#0079D3]"
+                    value={icon}
+                    placeholder="Emoji ou URL"
+                    onChange={e => setIcon(e.target.value)}
+                  />
+                  <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-[10px] font-bold py-1 px-2 rounded text-center border border-gray-300 transition-colors">
+                    Upload Foto
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, setIcon)} />
+                  </label>
+                </div>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-bold mb-2 text-gray-700">SLUG DA URL</label>
@@ -106,13 +134,24 @@ const ManageCommunityModal: React.FC<ManageCommunityModalProps> = ({ onClose, on
           </div>
 
           <div>
-            <label className="block text-xs font-bold mb-2 text-gray-700">URL DO BANNER</label>
-            <input 
-              className="w-full border border-gray-300 rounded p-2 text-sm outline-none focus:border-[#0079D3]"
-              placeholder="https://exemplo.com/imagem.jpg"
-              value={banner}
-              onChange={e => setBanner(e.target.value)}
-            />
+            <label className="block text-xs font-bold mb-2 text-gray-700">BANNER DA COMUNIDADE</label>
+            <div className="space-y-2">
+              <div className="w-full h-20 bg-gray-100 border rounded overflow-hidden">
+                <img src={banner} className="w-full h-full object-cover" alt="Banner preview" />
+              </div>
+              <div className="flex gap-2">
+                <input 
+                  className="flex-1 border border-gray-300 rounded p-2 text-xs outline-none focus:border-[#0079D3]"
+                  placeholder="URL do Banner"
+                  value={banner}
+                  onChange={e => setBanner(e.target.value)}
+                />
+                <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-[10px] font-bold py-2 px-3 rounded text-center border border-gray-300 transition-colors whitespace-nowrap flex items-center">
+                  Mudar Foto
+                  <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, setBanner)} />
+                </label>
+              </div>
+            </div>
           </div>
 
           <div className="pt-4 border-t flex flex-col gap-3">
@@ -136,7 +175,7 @@ const ManageCommunityModal: React.FC<ManageCommunityModalProps> = ({ onClose, on
               <button 
                 type="button"
                 onClick={() => onDelete(community.id)}
-                className="w-full mt-4 text-xs font-bold text-red-500 hover:text-red-700 p-2 border border-transparent hover:border-red-100 rounded transition-colors"
+                className="w-full mt-2 text-xs font-bold text-red-500 hover:text-red-700 p-2 border border-transparent hover:border-red-50 rounded transition-colors"
               >
                 Excluir Comunidade Permanentemente
               </button>

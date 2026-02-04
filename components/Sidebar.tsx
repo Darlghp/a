@@ -40,7 +40,13 @@ const Sidebar: React.FC<SidebarProps> = ({ communities, activeId, onSelect }) =>
                 onClick={() => onSelect(c.id)}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-[#E8EAEB] transition-colors text-sm truncate ${activeId === c.id ? 'bg-[#E8EAEB] font-bold' : ''}`}
               >
-                <span className="text-lg w-5 text-center flex-shrink-0">{c.icon}</span>
+                <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center overflow-hidden rounded-full bg-gray-100">
+                  {c.icon.startsWith('data:') || c.icon.startsWith('http') ? (
+                    <img src={c.icon} className="w-full h-full object-cover" alt="icon" />
+                  ) : (
+                    <span className="text-sm">{c.icon}</span>
+                  )}
+                </div>
                 <span className="truncate flex-1 text-left">r/{c.name}</span>
               </button>
             ))

@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, Post, Community, ViewMode, Comment } from './types';
-import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar';
-import Feed from './components/Feed';
-import CreatePost from './components/CreatePost';
-import ManageCommunityModal from './components/ManageCommunityModal';
+import { User, Post, Community, ViewMode, Comment } from './types.ts';
+import Navbar from './components/Navbar.tsx';
+import Sidebar from './components/Sidebar.tsx';
+import Feed from './components/Feed.tsx';
+import CreatePost from './components/CreatePost.tsx';
+import ManageCommunityModal from './components/ManageCommunityModal.tsx';
 
 const App: React.FC = () => {
   const [currentUser] = useState<User>({
@@ -119,7 +119,6 @@ const App: React.FC = () => {
       />
       
       <div className="max-w-[1248px] mx-auto pt-16 flex justify-center gap-6 px-4">
-        {/* Sidebar Esquerda */}
         <div className="hidden md:block w-64 shrink-0">
           <Sidebar 
             communities={communities} 
@@ -129,24 +128,27 @@ const App: React.FC = () => {
           />
         </div>
 
-        {/* Conteúdo Central */}
         <main className="flex-1 max-w-[640px] min-w-0">
           {activeCommunity && currentView === 'community' && (
             <div className="bg-white rounded-md shadow-sm mb-4 overflow-hidden border border-[#ccc]">
-              <div className="h-20 w-full bg-cover bg-center" style={{ backgroundImage: `url(${activeCommunity.banner})` }}></div>
+              <div className="h-32 w-full bg-cover bg-center" style={{ backgroundImage: `url(${activeCommunity.banner})` }}></div>
               <div className="px-4 py-3 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-white border-4 border-white -mt-10 flex items-center justify-center text-3xl shadow-sm">
-                    {activeCommunity.icon}
+                  <div className="w-20 h-20 rounded-full bg-white border-4 border-white -mt-12 flex items-center justify-center overflow-hidden shadow-md">
+                    {activeCommunity.icon.startsWith('data:') || activeCommunity.icon.startsWith('http') ? (
+                      <img src={activeCommunity.icon} className="w-full h-full object-cover" alt="Community icon" />
+                    ) : (
+                      <span className="text-4xl">{activeCommunity.icon}</span>
+                    )}
                   </div>
-                  <div>
-                    <h1 className="text-xl font-bold">r/{activeCommunity.name}</h1>
+                  <div className="mt-1">
+                    <h1 className="text-2xl font-bold">r/{activeCommunity.name}</h1>
                     <p className="text-gray-500 text-xs">c/{activeCommunity.slug}</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => { setCommunityToManage(activeCommunity); setIsManageModalOpen(true); }}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-xs font-bold transition-colors flex items-center gap-1 border border-gray-300"
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-1.5 rounded-full text-xs font-bold transition-colors flex items-center gap-1 border border-gray-300"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -182,7 +184,6 @@ const App: React.FC = () => {
           />
         </main>
 
-        {/* Sidebar Direita */}
         <div className="hidden lg:block w-[312px] shrink-0">
           <div className="bg-white rounded border border-[#ccc] overflow-hidden sticky top-16">
             <div className="h-8 bg-[#0079D3]"></div>
