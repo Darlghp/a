@@ -9,17 +9,17 @@ import CreatePost from './components/CreatePost';
 const App: React.FC = () => {
   const [currentUser] = useState<User>({
     id: 'user_1',
-    name: 'Administrador',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
+    name: 'Admin',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin&backgroundColor=ff4500',
     karma: 1250
   });
 
   const [communities, setCommunities] = useState<Community[]>(() => {
     const saved = localStorage.getItem('privy_communities');
     return saved ? JSON.parse(saved) : [
-      { id: 'c1', name: 'Geral', slug: 'geral', description: 'Comunidade para tudo o que importa.', icon: '🌐', banner: 'https://picsum.photos/seed/general/800/200', memberCount: 1 },
-      { id: 'c2', name: 'Tecnologia', slug: 'tecnologia', description: 'Discussões sobre o futuro e gadgets.', icon: '💻', banner: 'https://picsum.photos/seed/tech/800/200', memberCount: 1 },
-      { id: 'c3', name: 'Fotografia', slug: 'foto', description: 'Compartilhe seus melhores cliques.', icon: '📸', banner: 'https://picsum.photos/seed/photo/800/200', memberCount: 1 }
+      { id: 'c1', name: 'Geral', slug: 'geral', description: 'O lugar para tudo o que importa.', icon: '🏠', banner: 'https://picsum.photos/seed/general/800/200', memberCount: 1 },
+      { id: 'c2', name: 'Tecnologia', slug: 'tecnologia', description: 'O futuro é agora.', icon: '💻', banner: 'https://picsum.photos/seed/tech/800/200', memberCount: 1 },
+      { id: 'c3', name: 'Imagens', slug: 'imagens', description: 'Galeria privada de fotos.', icon: '🖼️', banner: 'https://picsum.photos/seed/images/800/200', memberCount: 1 }
     ];
   });
 
@@ -53,12 +53,6 @@ const App: React.FC = () => {
     setIsCreateModalOpen(false);
   };
 
-  const handleDeletePost = (postId: string) => {
-    if (window.confirm('Tem certeza que deseja excluir esta postagem?')) {
-      setPosts(prev => prev.filter(p => p.id !== postId));
-    }
-  };
-
   const handleVote = (postId: string, delta: number) => {
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, votes: p.votes + delta } : p));
   };
@@ -71,9 +65,7 @@ const App: React.FC = () => {
       timestamp: Date.now(),
       votes: 1
     };
-    setPosts(prev => prev.map(p => 
-      p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p
-    ));
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p));
   };
 
   const handleCreateCommunity = (name: string, description: string) => {
@@ -99,7 +91,7 @@ const App: React.FC = () => {
   const activeCommunity = communities.find(c => c.id === activeCommunityId);
 
   return (
-    <div className="min-h-screen bg-[#DAE0E6]">
+    <div className="min-h-screen bg-[#DAE0E6] text-[#1A1A1B]">
       <Navbar 
         onSearch={setSearchQuery} 
         onOpenCreate={() => setIsCreateModalOpen(true)}
@@ -107,69 +99,79 @@ const App: React.FC = () => {
         user={currentUser}
       />
       
-      <div className="max-w-6xl mx-auto pt-16 flex flex-col md:flex-row gap-6 px-4">
-        {/* Sidebar */}
-        <div className="md:w-64 shrink-0 order-2 md:order-1">
+      <div className="max-w-[1248px] mx-auto pt-16 flex justify-center gap-6 px-4">
+        {/* Sidebar Esquerda */}
+        <div className="hidden md:block w-64 shrink-0">
           <Sidebar 
             communities={communities} 
             activeId={activeCommunityId}
-            onSelect={(id) => { setActiveCommunityId(id); setCurrentView('community'); window.scrollTo(0, 0); }}
+            onSelect={(id) => { setActiveCommunityId(id); setCurrentView('community'); }}
             onCreateCommunity={handleCreateCommunity}
           />
         </div>
 
-        {/* Main Content */}
-        <main className="flex-1 min-w-0 order-1 md:order-2">
+        {/* Conteúdo Central */}
+        <main className="flex-1 max-w-[640px] min-w-0">
+          {/* Header de Comunidade se ativo */}
           {activeCommunity && currentView === 'community' && (
-            <div className="bg-white rounded-lg shadow-sm mb-4 overflow-hidden border border-gray-300">
-              <div className="h-32 w-full bg-cover bg-center" style={{ backgroundImage: `url(${activeCommunity.banner})` }}></div>
-              <div className="p-4 flex items-center gap-4">
-                <div className="w-20 h-20 rounded-full bg-white border-4 border-white -mt-12 flex items-center justify-center text-4xl shadow-md">
+            <div className="bg-white rounded-md shadow-sm mb-4 overflow-hidden border border-[#ccc]">
+              <div className="h-20 w-full bg-cover bg-center" style={{ backgroundImage: `url(${activeCommunity.banner})` }}></div>
+              <div className="px-4 py-3 flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-white border-4 border-white -mt-10 flex items-center justify-center text-3xl shadow-sm">
                   {activeCommunity.icon}
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold">c/{activeCommunity.name}</h1>
-                  <p className="text-gray-500 text-sm">{activeCommunity.description}</p>
+                  <h1 className="text-xl font-bold">r/{activeCommunity.name}</h1>
+                  <p className="text-gray-500 text-xs">c/{activeCommunity.slug}</p>
                 </div>
               </div>
             </div>
           )}
 
+          {/* Barra de Criação Estilo Reddit */}
+          <div className="bg-white p-2 rounded border border-[#ccc] mb-4 flex items-center gap-2">
+            <img src={currentUser.avatar} className="w-9 h-9 rounded-full bg-gray-200" alt="me" />
+            <input 
+              readOnly
+              onClick={() => setIsCreateModalOpen(true)}
+              placeholder="Criar postagem"
+              className="flex-1 bg-[#F6F7F8] border border-[#EDEFF1] hover:bg-white hover:border-[#0079D3] rounded px-4 py-2 text-sm cursor-pointer outline-none"
+            />
+            <button onClick={() => setIsCreateModalOpen(true)} className="p-2 hover:bg-gray-100 rounded text-gray-500">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </button>
+          </div>
+
           <Feed 
             posts={filteredPosts} 
             onVote={handleVote} 
-            onDelete={handleDeletePost}
+            onDelete={(id) => setPosts(posts.filter(p => p.id !== id))}
             onAddComment={handleAddComment}
             communities={communities}
           />
         </main>
 
-        {/* Right Sidebar - Info */}
-        <div className="hidden lg:block w-72 shrink-0 order-3">
-          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-300 sticky top-20">
-            <h2 className="font-bold mb-2 flex items-center gap-2">
-              <span className="w-4 h-4 bg-orange-600 rounded-full"></span>
-              Sobre este Privy
-            </h2>
-            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-              Bem-vindo ao seu painel de controle. Este é um ambiente 100% privado rodando localmente no seu navegador. Você tem controle total sobre o conteúdo e as comunidades.
-            </p>
-            <div className="border-t pt-4 space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Postagens</span>
-                <span className="font-semibold text-gray-900">{posts.length}</span>
+        {/* Sidebar Direita (Widgets) */}
+        <div className="hidden lg:block w-[312px] shrink-0">
+          <div className="bg-white rounded border border-[#ccc] overflow-hidden sticky top-16">
+            <div className="h-8 bg-[#0079D3]"></div>
+            <div className="p-3">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold">P</div>
+                <span className="font-bold">Privy Home</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Comunidades</span>
-                <span className="font-semibold text-gray-900">{communities.length}</span>
+              <p className="text-sm mb-4 leading-snug">Sua página inicial personalizada do Privy. Controle tudo, veja tudo.</p>
+              <div className="space-y-2 border-t pt-4">
+                <button onClick={() => setIsCreateModalOpen(true)} className="w-full bg-[#0079D3] text-white font-bold py-1.5 rounded-full hover:bg-[#005FA3] transition-colors text-sm">
+                  Criar Postagem
+                </button>
+                <button className="w-full border border-[#0079D3] text-[#0079D3] font-bold py-1.5 rounded-full hover:bg-blue-50 transition-colors text-sm">
+                  Criar Comunidade
+                </button>
               </div>
             </div>
-            <button 
-              onClick={() => setIsCreateModalOpen(true)}
-              className="w-full mt-6 bg-blue-600 text-white font-bold py-2 rounded-full hover:bg-blue-700 transition-colors shadow-sm"
-            >
-              Criar Postagem
-            </button>
           </div>
         </div>
       </div>

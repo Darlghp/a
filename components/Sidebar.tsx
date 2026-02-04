@@ -12,80 +12,63 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ communities, activeId, onSelect, onCreateCommunity }) => {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
-  const [newDesc, setNewDesc] = useState('');
 
   return (
-    <aside className="bg-white rounded-lg shadow border border-gray-300 overflow-hidden">
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Suas Comunidades</h2>
-      </div>
-      
-      <div className="py-2">
+    <aside className="sticky top-16 space-y-4">
+      <div className="text-[#1A1A1B]">
+        <h2 className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Feeds</h2>
         <button 
           onClick={() => onSelect(null)}
-          className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-3 ${activeId === null ? 'bg-gray-100 border-l-4 border-orange-600' : ''}`}
+          className={`w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-[#E8EAEB] transition-colors text-sm ${activeId === null ? 'bg-[#E8EAEB] font-bold' : ''}`}
         >
-          <span className="text-xl">🏠</span>
-          <span className="font-medium">Página Inicial</span>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          Início
         </button>
-
-        {communities.map((c) => (
-          <button 
-            key={c.id}
-            onClick={() => onSelect(c.id)}
-            className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-3 ${activeId === c.id ? 'bg-gray-100 border-l-4 border-orange-600' : ''}`}
-          >
-            <span className="text-xl">{c.icon}</span>
-            <span className="truncate flex-1 font-medium">c/{c.name}</span>
-          </button>
-        ))}
       </div>
-
-      <div className="p-4 bg-gray-50 border-t border-gray-200">
-        {!showCreate ? (
-          <button 
-            onClick={() => setShowCreate(true)}
-            className="w-full bg-blue-50 text-blue-600 font-bold py-2 rounded-full hover:bg-blue-100 text-sm transition-colors"
-          >
-            Nova Comunidade
+      
+      <div>
+        <h2 className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest flex justify-between items-center">
+          Comunidades
+          <button onClick={() => setShowCreate(!showCreate)} className="p-1 hover:bg-gray-200 rounded text-gray-900">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
           </button>
-        ) : (
-          <div className="space-y-2">
+        </h2>
+
+        {showCreate && (
+          <div className="px-3 py-2 space-y-2 bg-white border border-[#ccc] rounded m-2 shadow-sm">
             <input 
-              className="w-full text-sm border rounded p-2 focus:ring-1 focus:ring-blue-500 outline-none" 
-              placeholder="Nome"
+              className="w-full text-xs border rounded p-1.5 outline-none" 
+              placeholder="Nome r/"
+              autoFocus
               value={newName}
               onChange={e => setNewName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && (onCreateCommunity(newName, ''), setNewName(''), setShowCreate(false))}
             />
-            <input 
-              className="w-full text-sm border rounded p-2 focus:ring-1 focus:ring-blue-500 outline-none" 
-              placeholder="Descrição"
-              value={newDesc}
-              onChange={e => setNewDesc(e.target.value)}
-            />
-            <div className="flex gap-2">
-              <button 
-                onClick={() => {
-                  if (newName) {
-                    onCreateCommunity(newName, newDesc);
-                    setNewName('');
-                    setNewDesc('');
-                    setShowCreate(false);
-                  }
-                }}
-                className="flex-1 bg-blue-600 text-white text-xs font-bold py-1 rounded"
-              >
-                Criar
-              </button>
-              <button 
-                onClick={() => setShowCreate(false)}
-                className="flex-1 bg-gray-200 text-gray-700 text-xs font-bold py-1 rounded"
-              >
-                Cancelar
-              </button>
-            </div>
+            <button 
+              onClick={() => { onCreateCommunity(newName, ''); setNewName(''); setShowCreate(false); }}
+              className="w-full bg-[#0079D3] text-white text-[10px] font-bold py-1 rounded"
+            >
+              Confirmar
+            </button>
           </div>
         )}
+
+        <div className="space-y-0.5">
+          {communities.map((c) => (
+            <button 
+              key={c.id}
+              onClick={() => onSelect(c.id)}
+              className={`w-full flex items-center gap-2 px-3 py-2 rounded hover:bg-[#E8EAEB] transition-colors text-sm truncate ${activeId === c.id ? 'bg-[#E8EAEB] font-bold' : ''}`}
+            >
+              <span className="text-lg w-5 text-center">{c.icon}</span>
+              r/{c.name}
+            </button>
+          ))}
+        </div>
       </div>
     </aside>
   );
