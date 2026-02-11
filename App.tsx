@@ -16,17 +16,27 @@ const App: React.FC = () => {
   });
 
   const [communities, setCommunities] = useState<Community[]>(() => {
-    const saved = localStorage.getItem('privy_communities');
-    return saved ? JSON.parse(saved) : [
-      { id: 'c1', name: 'Geral', slug: 'geral', description: 'O lugar para tudo o que importa.', icon: '🏠', banner: 'https://picsum.photos/seed/general/800/200', memberCount: 1 },
-      { id: 'c2', name: 'Tecnologia', slug: 'tecnologia', description: 'O futuro é agora.', icon: '💻', banner: 'https://picsum.photos/seed/tech/800/200', memberCount: 1 },
-      { id: 'c3', name: 'Imagens', slug: 'imagens', description: 'Galeria privada de fotos.', icon: '🖼️', banner: 'https://picsum.photos/seed/images/800/200', memberCount: 1 }
-    ];
+    try {
+      const saved = localStorage.getItem('privy_communities');
+      return saved ? JSON.parse(saved) : [
+        { id: 'c1', name: 'Geral', slug: 'geral', description: 'O lugar para tudo o que importa.', icon: '🏠', banner: 'https://picsum.photos/seed/general/800/200', memberCount: 1 },
+        { id: 'c2', name: 'Tecnologia', slug: 'tecnologia', description: 'O futuro é agora.', icon: '💻', banner: 'https://picsum.photos/seed/tech/800/200', memberCount: 1 },
+        { id: 'c3', name: 'Imagens', slug: 'imagens', description: 'Galeria privada de fotos.', icon: '🖼️', banner: 'https://picsum.photos/seed/images/800/200', memberCount: 1 }
+      ];
+    } catch (e) {
+      console.error("Erro ao carregar comunidades", e);
+      return [];
+    }
   });
 
   const [posts, setPosts] = useState<Post[]>(() => {
-    const saved = localStorage.getItem('privy_posts');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('privy_posts');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Erro ao carregar posts", e);
+      return [];
+    }
   });
 
   const [currentView, setCurrentView] = useState<ViewMode>('home');
@@ -37,11 +47,21 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    localStorage.setItem('privy_posts', JSON.stringify(posts));
+    try {
+      localStorage.setItem('privy_posts', JSON.stringify(posts));
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+        alert("Erro: O armazenamento do navegador está cheio! Tente apagar posts antigos ou usar imagens menores.");
+      }
+    }
   }, [posts]);
 
   useEffect(() => {
-    localStorage.setItem('privy_communities', JSON.stringify(communities));
+    try {
+      localStorage.setItem('privy_communities', JSON.stringify(communities));
+    } catch (e) {
+      console.error("Erro ao salvar comunidades", e);
+    }
   }, [communities]);
 
   const handleCreatePost = (newPost: Omit<Post, 'id' | 'timestamp' | 'votes' | 'comments'>) => {
@@ -105,9 +125,16 @@ const App: React.FC = () => {
     }
   };
 
-  const filteredPosts = posts.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          post.content.toLowerCase().includes(searchQuery.toLowerCase());
+  const handleResetData = () => {
+    if (confirm("Isso apagará todas as suas postagens e comunidades para liberar espaço. Continuar?")) {
+      localStorage.clear();
+      window.location.reload();
+    }
+  };
+
+  const filteredPosts = (Array.isArray(posts) ? posts : []).filter(post => {
+    const matchesSearch = post.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          post.content?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCommunity = activeCommunityId ? post.communityId === activeCommunityId : true;
     return matchesSearch && matchesCommunity;
   });
@@ -140,10 +167,10 @@ const App: React.FC = () => {
               <div className="px-4 py-3 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="w-20 h-20 rounded-full bg-white border-4 border-white -mt-12 flex items-center justify-center overflow-hidden shadow-md">
-                    {activeCommunity.icon.startsWith('data:') || activeCommunity.icon.startsWith('http') ? (
+                    {activeCommunity.icon && (activeCommunity.icon.startsWith('data:') || activeCommunity.icon.startsWith('http')) ? (
                       <img src={activeCommunity.icon} className="w-full h-full object-cover" alt="Community icon" />
                     ) : (
-                      <span className="text-4xl">{activeCommunity.icon}</span>
+                      <span className="text-4xl">{activeCommunity.icon || '📁'}</span>
                     )}
                   </div>
                   <div className="mt-1">
@@ -165,19 +192,14 @@ const App: React.FC = () => {
             </div>
           )}
 
-          <div className="bg-white p-2 rounded border border-[#ccc] mb-4 flex items-center gap-2">
+          <div className="bg-white p-2 rounded border border-[#ccc] mb-4 flex items-center gap-2 shadow-sm">
             <img src={currentUser.avatar} className="w-9 h-9 rounded-full bg-gray-200" alt="me" />
             <input 
               readOnly
               onClick={() => setIsCreateModalOpen(true)}
               placeholder="Criar postagem"
-              className="flex-1 bg-[#F6F7F8] border border-[#EDEFF1] hover:bg-white hover:border-[#0079D3] rounded px-4 py-2 text-sm cursor-pointer outline-none"
+              className="flex-1 bg-[#F6F7F8] border border-[#EDEFF1] hover:bg-white hover:border-[#0079D3] rounded px-4 py-2 text-sm cursor-pointer outline-none transition-colors"
             />
-            <button onClick={() => setIsCreateModalOpen(true)} className="p-2 hover:bg-gray-100 rounded text-gray-500">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </button>
           </div>
 
           <Feed 
@@ -188,19 +210,28 @@ const App: React.FC = () => {
             onAddComment={handleAddComment}
             communities={communities}
           />
+
+          <div className="mt-8 mb-12 text-center">
+            <button 
+              onClick={handleResetData}
+              className="text-xs text-gray-400 hover:text-red-500 underline transition-colors"
+            >
+              Resetar todos os dados (Limpar Armazenamento)
+            </button>
+          </div>
         </main>
 
         <div className="hidden lg:block w-[312px] shrink-0">
-          <div className="bg-white rounded border border-[#ccc] overflow-hidden sticky top-16">
+          <div className="bg-white rounded border border-[#ccc] overflow-hidden sticky top-16 shadow-sm">
             <div className="h-8 bg-[#0079D3]"></div>
             <div className="p-3">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold">P</div>
+                <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">P</div>
                 <span className="font-bold">Privy Home</span>
               </div>
-              <p className="text-sm mb-4 leading-snug">O seu Reddit privado. Aqui você é o dono, o moderador e o usuário.</p>
+              <p className="text-sm mb-4 leading-snug text-gray-700">O seu Reddit privado. Aqui você é o dono, o moderador e o usuário único.</p>
               <div className="space-y-2 border-t pt-4">
-                <button onClick={() => setIsCreateModalOpen(true)} className="w-full bg-[#0079D3] text-white font-bold py-1.5 rounded-full hover:bg-[#005FA3] transition-colors text-sm">
+                <button onClick={() => setIsCreateModalOpen(true)} className="w-full bg-[#0079D3] text-white font-bold py-1.5 rounded-full hover:bg-[#005FA3] transition-colors text-sm shadow-sm">
                   Criar Postagem
                 </button>
                 <button 

@@ -4,7 +4,7 @@ import { Post, Community } from '../types';
 
 interface CreatePostProps {
   onClose: () => void;
-  onSubmit: (post: Omit<Post, 'id' | 'timestamp' | 'votes' | 'commentCount'>) => void;
+  onSubmit: (post: Omit<Post, 'id' | 'timestamp' | 'votes' | 'comments'>) => void;
   communities: Community[];
   activeCommunityId?: string;
 }
@@ -19,6 +19,12 @@ const CreatePost: React.FC<CreatePostProps> = ({ onClose, onSubmit, communities,
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !selectedCommId) return;
+
+    // Se a imagem for muito grande, alertar
+    if (type === 'image' && imageUrl.length > 2000000) {
+      alert("A imagem selecionada é muito grande para o armazenamento do navegador. Tente uma foto menor ou com resolução mais baixa.");
+      return;
+    }
 
     onSubmit({
       title,
@@ -42,11 +48,11 @@ const CreatePost: React.FC<CreatePostProps> = ({ onClose, onSubmit, communities,
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-[#DAE0E6] w-full max-w-2xl rounded-lg overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="bg-[#DAE0E6] w-full max-w-2xl rounded-lg overflow-hidden flex flex-col max-h-[90vh] shadow-2xl">
         <div className="bg-white p-4 border-b flex justify-between items-center">
           <h2 className="text-lg font-bold">Criar uma postagem</h2>
-          <button onClick={onClose} className="text-gray-500 hover:bg-gray-100 p-1 rounded-full">
+          <button onClick={onClose} className="text-gray-500 hover:bg-gray-100 p-1 rounded-full transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -56,7 +62,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onClose, onSubmit, communities,
         <div className="p-4 overflow-y-auto">
           <div className="mb-4">
             <select 
-              className="w-full sm:w-64 bg-white border rounded p-2 text-sm font-bold"
+              className="w-full sm:w-64 bg-white border border-gray-300 rounded p-2 text-sm font-bold outline-none focus:border-blue-500 transition-colors"
               value={selectedCommId}
               onChange={(e) => setSelectedCommId(e.target.value)}
             >
@@ -67,11 +73,12 @@ const CreatePost: React.FC<CreatePostProps> = ({ onClose, onSubmit, communities,
             </select>
           </div>
 
-          <div className="bg-white rounded-lg p-2 mb-4">
+          <div className="bg-white rounded-lg p-2 mb-4 shadow-sm border border-gray-200">
             <div className="flex border-b">
               <button 
+                type="button"
                 onClick={() => setType('text')}
-                className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors ${type === 'text' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:bg-gray-50'}`}
+                className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-all ${type === 'text' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:bg-gray-50'}`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
@@ -79,8 +86,9 @@ const CreatePost: React.FC<CreatePostProps> = ({ onClose, onSubmit, communities,
                 Post
               </button>
               <button 
+                type="button"
                 onClick={() => setType('image')}
-                className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-colors ${type === 'image' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:bg-gray-50'}`}
+                className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-all ${type === 'image' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:bg-gray-50'}`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -91,7 +99,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onClose, onSubmit, communities,
 
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <input 
-                className="w-full border rounded p-2 text-sm outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full border rounded p-2 text-sm outline-none focus:ring-1 focus:ring-blue-500 transition-all"
                 placeholder="Título"
                 required
                 value={title}
@@ -100,20 +108,21 @@ const CreatePost: React.FC<CreatePostProps> = ({ onClose, onSubmit, communities,
 
               {type === 'text' ? (
                 <textarea 
-                  className="w-full border rounded p-2 text-sm min-h-[160px] outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full border rounded p-2 text-sm min-h-[160px] outline-none focus:ring-1 focus:ring-blue-500 transition-all"
                   placeholder="Texto (opcional)"
                   value={content}
                   onChange={e => setContent(e.target.value)}
                 />
               ) : (
                 <div className="space-y-4">
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 flex flex-col items-center justify-center bg-gray-50">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50 min-h-[160px]">
                     {imageUrl ? (
                       <div className="relative w-full">
-                        <img src={imageUrl} className="max-h-64 mx-auto rounded" alt="Preview" />
+                        <img src={imageUrl} className="max-h-64 mx-auto rounded shadow-sm" alt="Preview" />
                         <button 
+                          type="button"
                           onClick={() => setImageUrl('')}
-                          className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1"
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -124,24 +133,24 @@ const CreatePost: React.FC<CreatePostProps> = ({ onClose, onSubmit, communities,
                       <>
                         <input 
                           type="file" 
-                          id="image-upload" 
+                          id="image-upload-post" 
                           className="hidden" 
                           accept="image/*" 
                           onChange={handleImageUpload}
                         />
                         <label 
-                          htmlFor="image-upload"
-                          className="cursor-pointer bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700"
+                          htmlFor="image-upload-post"
+                          className="cursor-pointer bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition-all shadow-sm"
                         >
-                          Upload de Imagem
+                          Escolher Foto
                         </label>
-                        <p className="mt-2 text-xs text-gray-400">ou cole o link abaixo</p>
+                        <p className="mt-2 text-[10px] text-gray-400">Dica: Use fotos menores que 1MB</p>
                       </>
                     )}
                   </div>
                   <input 
-                    className="w-full border rounded p-2 text-sm outline-none"
-                    placeholder="Link da imagem (opcional se fez upload)"
+                    className="w-full border rounded p-2 text-sm outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+                    placeholder="Ou cole a URL da imagem aqui"
                     value={imageUrl}
                     onChange={e => setImageUrl(e.target.value)}
                   />
@@ -152,14 +161,14 @@ const CreatePost: React.FC<CreatePostProps> = ({ onClose, onSubmit, communities,
                 <button 
                   type="button"
                   onClick={onClose}
-                  className="px-6 py-2 border border-blue-600 text-blue-600 rounded-full font-bold hover:bg-blue-50"
+                  className="px-6 py-2 border border-blue-600 text-blue-600 rounded-full font-bold hover:bg-blue-50 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button 
                   type="submit"
                   disabled={!title || !selectedCommId}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700 disabled:opacity-50"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700 disabled:opacity-50 transition-all shadow-sm"
                 >
                   Postar
                 </button>
