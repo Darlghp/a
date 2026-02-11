@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar.tsx';
 import Feed from './components/Feed.tsx';
 import CreatePost from './components/CreatePost.tsx';
 import ManageCommunityModal from './components/ManageCommunityModal.tsx';
+import { loadData, saveData } from './db.ts';
 
 const App: React.FC = () => {
   const [currentUser] = useState<User>({
@@ -15,30 +16,9 @@ const App: React.FC = () => {
     karma: 1250
   });
 
-  const [communities, setCommunities] = useState<Community[]>(() => {
-    try {
-      const saved = localStorage.getItem('privy_communities');
-      return saved ? JSON.parse(saved) : [
-        { id: 'c1', name: 'Geral', slug: 'geral', description: 'O lugar para tudo o que importa.', icon: '🏠', banner: 'https://picsum.photos/seed/general/800/200', memberCount: 1 },
-        { id: 'c2', name: 'Tecnologia', slug: 'tecnologia', description: 'O futuro é agora.', icon: '💻', banner: 'https://picsum.photos/seed/tech/800/200', memberCount: 1 },
-        { id: 'c3', name: 'Imagens', slug: 'imagens', description: 'Galeria privada de fotos.', icon: '🖼️', banner: 'https://picsum.photos/seed/images/800/200', memberCount: 1 }
-      ];
-    } catch (e) {
-      console.error("Erro ao carregar comunidades", e);
-      return [];
-    }
-  });
-
-  const [posts, setPosts] = useState<Post[]>(() => {
-    try {
-      const saved = localStorage.getItem('privy_posts');
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      console.error("Erro ao carregar posts", e);
-      return [];
-    }
-  });
-
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<ViewMode>('home');
   const [activeCommunityId, setActiveCommunityId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -46,23 +26,44 @@ const App: React.FC = () => {
   const [communityToManage, setCommunityToManage] = useState<Community | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Carregamento inicial do IndexedDB
   useEffect(() => {
-    try {
-      localStorage.setItem('privy_posts', JSON.stringify(posts));
-    } catch (e) {
-      if (e instanceof DOMException && e.name === 'QuotaExceededError') {
-        alert("Erro: O armazenamento do navegador está cheio! Tente apagar posts antigos ou usar imagens menores.");
+    const init = async () => {
+      try {
+        const savedComms = await loadData('communities');
+        const savedPosts = await loadData('posts');
+        
+        if (savedComms.length > 0) {
+          setCommunities(savedComms);
+        } else {
+          // Defaults se estiver vazio
+          setCommunities([
+            { id: 'c1', name: 'Geral', slug: 'geral', description: 'O lugar para tudo o que importa.', icon: '🏠', banner: 'https://picsum.photos/seed/general/800/200', memberCount: 1 },
+            { id: 'c2', name: 'Tecnologia', slug: 'tecnologia', description: 'O futuro é agora.', icon: '💻', banner: 'https://picsum.photos/seed/tech/800/200', memberCount: 1 }
+          ]);
+        }
+        setPosts(savedPosts);
+      } catch (e) {
+        console.error("Erro ao inicializar DB", e);
+      } finally {
+        setLoading(false);
       }
+    };
+    init();
+  }, []);
+
+  // Salvamento automático no IndexedDB quando posts ou comunidades mudam
+  useEffect(() => {
+    if (!loading) {
+      saveData('posts', posts);
     }
-  }, [posts]);
+  }, [posts, loading]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('privy_communities', JSON.stringify(communities));
-    } catch (e) {
-      console.error("Erro ao salvar comunidades", e);
+    if (!loading) {
+      saveData('communities', communities);
     }
-  }, [communities]);
+  }, [communities, loading]);
 
   const handleCreatePost = (newPost: Omit<Post, 'id' | 'timestamp' | 'votes' | 'comments'>) => {
     const post: Post = {
@@ -115,24 +116,21 @@ const App: React.FC = () => {
   };
 
   const handleDeleteCommunity = (id: string) => {
-    if (confirm('Deseja realmente excluir esta comunidade? Todos os posts nela serão mantidos no feed geral.')) {
+    if (confirm('Excluir esta comunidade?')) {
       setCommunities(prev => prev.filter(c => c.id !== id));
-      if (activeCommunityId === id) {
-        setActiveCommunityId(null);
-        setCurrentView('home');
-      }
+      if (activeCommunityId === id) setActiveCommunityId(null);
       setIsManageModalOpen(false);
     }
   };
 
   const handleResetData = () => {
-    if (confirm("Isso apagará todas as suas postagens e comunidades para liberar espaço. Continuar?")) {
-      localStorage.clear();
-      window.location.reload();
+    if (confirm("Apagar TUDO (incluindo imagens salvas)?")) {
+      const request = indexedDB.deleteDatabase('PrivyDB');
+      request.onsuccess = () => window.location.reload();
     }
   };
 
-  const filteredPosts = (Array.isArray(posts) ? posts : []).filter(post => {
+  const filteredPosts = posts.filter(post => {
     const matchesSearch = post.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           post.content?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCommunity = activeCommunityId ? post.communityId === activeCommunityId : true;
@@ -140,6 +138,8 @@ const App: React.FC = () => {
   });
 
   const activeCommunity = communities.find(c => c.id === activeCommunityId);
+
+  if (loading) return <div className="h-screen flex items-center justify-center font-bold text-[#0079D3]">Carregando seu Privy...</div>;
 
   return (
     <div className="min-h-screen bg-[#DAE0E6] text-[#1A1A1B]">
@@ -167,25 +167,21 @@ const App: React.FC = () => {
               <div className="px-4 py-3 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="w-20 h-20 rounded-full bg-white border-4 border-white -mt-12 flex items-center justify-center overflow-hidden shadow-md">
-                    {activeCommunity.icon && (activeCommunity.icon.startsWith('data:') || activeCommunity.icon.startsWith('http')) ? (
-                      <img src={activeCommunity.icon} className="w-full h-full object-cover" alt="Community icon" />
+                    {activeCommunity.icon?.startsWith('data:') || activeCommunity.icon?.startsWith('http') ? (
+                      <img src={activeCommunity.icon} className="w-full h-full object-cover" alt="Icon" />
                     ) : (
                       <span className="text-4xl">{activeCommunity.icon || '📁'}</span>
                     )}
                   </div>
-                  <div className="mt-1">
+                  <div>
                     <h1 className="text-2xl font-bold">r/{activeCommunity.name}</h1>
                     <p className="text-gray-500 text-xs">c/{activeCommunity.slug}</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => { setCommunityToManage(activeCommunity); setIsManageModalOpen(true); }}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-1.5 rounded-full text-xs font-bold transition-colors flex items-center gap-1 border border-gray-300"
+                  className="bg-gray-100 hover:bg-gray-200 px-4 py-1.5 rounded-full text-xs font-bold border border-gray-300"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
                   Modificar
                 </button>
               </div>
@@ -212,11 +208,8 @@ const App: React.FC = () => {
           />
 
           <div className="mt-8 mb-12 text-center">
-            <button 
-              onClick={handleResetData}
-              className="text-xs text-gray-400 hover:text-red-500 underline transition-colors"
-            >
-              Resetar todos os dados (Limpar Armazenamento)
+            <button onClick={handleResetData} className="text-xs text-gray-400 hover:text-red-500 underline">
+              Limpar todo o Banco de Dados (IndexedDB)
             </button>
           </div>
         </main>
@@ -226,20 +219,13 @@ const App: React.FC = () => {
             <div className="h-8 bg-[#0079D3]"></div>
             <div className="p-3">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">P</div>
+                <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold">P</div>
                 <span className="font-bold">Privy Home</span>
               </div>
-              <p className="text-sm mb-4 leading-snug text-gray-700">O seu Reddit privado. Aqui você é o dono, o moderador e o usuário único.</p>
+              <p className="text-sm mb-4 leading-snug">Sua rede social privada com armazenamento massivo via IndexedDB.</p>
               <div className="space-y-2 border-t pt-4">
-                <button onClick={() => setIsCreateModalOpen(true)} className="w-full bg-[#0079D3] text-white font-bold py-1.5 rounded-full hover:bg-[#005FA3] transition-colors text-sm shadow-sm">
-                  Criar Postagem
-                </button>
-                <button 
-                  onClick={() => { setCommunityToManage(null); setIsManageModalOpen(true); }}
-                  className="w-full border border-[#0079D3] text-[#0079D3] font-bold py-1.5 rounded-full hover:bg-blue-50 transition-colors text-sm"
-                >
-                  Criar Comunidade
-                </button>
+                <button onClick={() => setIsCreateModalOpen(true)} className="w-full bg-[#0079D3] text-white font-bold py-1.5 rounded-full text-sm">Criar Postagem</button>
+                <button onClick={() => { setCommunityToManage(null); setIsManageModalOpen(true); }} className="w-full border border-[#0079D3] text-[#0079D3] font-bold py-1.5 rounded-full text-sm">Criar Comunidade</button>
               </div>
             </div>
           </div>
